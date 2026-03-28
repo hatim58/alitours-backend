@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  name         String
+  email        String    @unique
+  password     String
+  role         String    @default("USER")
+  otpCode      String?
+  otpExpiresAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Client {
+  id         Int         @id @default(autoincrement())
+  name       String
+  email      String?
+  phone      String?
+  address    String?
+  quotations Quotation[]
+  bookings   Booking[]
+  payments   Payment[]
+  invoices   Invoice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Quotation {
+  id               Int       @id @default(autoincrement())
+  clientId         Int
+  client           Client    @relation(fields: [clientId], references: [id])
+  itineraryDetails String?   @db.Text
+  price            Float
+  status           String    @default("SENT") // SENT, ACCEPTED, REJECTED
+  pdfUrl           String?
+  bookings         Booking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Location {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  image       String
+  description String?   @db.Text
+  packages    Package[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Package {
+  id                 String   @id
+  name               String
+  locationId         String?
+  location           Location? @relation(fields: [locationId], references: [id])
+  destination        String
+  destinationCity    String
+  destinationCountry String
+  fromCity           String
+  description        String   @db.Text
+  duration           Int
+  price              Float
+  originalPrice      Float?
+  discount           Int?
+  maxGuests          Int
+  rating             Float    @default(0)
+  reviewsCount       Int      @default(0)
+  destinationType    String
+  image              String
+  gallery            String[]
+  highlights         String[]
+  includes           String[]
+  excludes           String[]
+  
+  // Relations
+  reviews            Review[]
+  bookings           Booking[]
+
+  itinerary          Json?
+  accommodation      Json?
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Booking {
+  id          Int        @id @default(autoincrement())
+  clientId    Int
+  client      Client     @relation(fields: [clientId], references: [id])
+  quotationId Int?
+  quotation   Quotation? @relation(fields: [quotationId], references: [id])
+  packageId   String?
+  package     Package?   @relation(fields: [packageId], references: [id])
+  travelDates String?
+  services    String?    @db.Text
+  status      String     @default("PENDING") // PENDING, CONFIRMED, CANCELLED
+  guests      Int?       @default(1)
+
+  invoice     Invoice?
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Payment {
+  id            Int      @id @default(autoincrement())
+  clientId      Int
+  client        Client   @relation(fields: [clientId], references: [id])
+  amount        Float
+  method        String?  // RAZORPAY, STRIPE, BANK_TRANSFER, etc.
+  status        String   @default("PENDING") // PENDING, SUCCESS, FAILED
+  transactionId String?
+  receiptUrl    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  packageId String
+  package   Package  @relation(fields: [packageId], references: [id])
+  name      String
+  rating    Int
+  comment   String   @db.Text
+  date      DateTime @default(now())
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Invoice {
+  id        Int      @id @default(autoincrement())
+  clientId  Int
+  client    Client   @relation(fields: [clientId], references: [id])
+  bookingId Int      @unique
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  amount    Float
+  status    String   @default("UNPAID") // UNPAID, PAID, CANCELLED
+  pdfUrl    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdminSlideshow {
+  id        Int      @id @default(autoincrement())
+  imageUrl  String
+  title     String?
+  subtitle  String?
+  linkUrl   String?
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

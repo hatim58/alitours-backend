@@ -4,7 +4,18 @@ const prisma = require('../config/db');
 const { sendEmail } = require('../services/emailService');
 
 const generateToken = (id, role) => {
-    return jwt.sign({ id, role }, process.env.JWT_SECRET, {
+    const secret = process.env.JWT_SECRET;
+
+    if (!secret) {
+        console.error("❌ CRITICAL ERROR: JWT_SECRET is not defined in environment variables!");
+
+        // Temporary fallback (ONLY for debugging)
+        return jwt.sign({ id, role }, "temporary_fallback_secret", {
+            expiresIn: '30d',
+        });
+    }
+
+    return jwt.sign({ id, role }, secret, {
         expiresIn: '30d',
     });
 };

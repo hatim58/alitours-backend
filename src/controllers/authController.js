@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../config/db');
+const { sendEmail } = require('../services/emailService');
 
 const generateToken = (id, role) => {
     return jwt.sign({ id, role }, process.env.JWT_SECRET, {
@@ -73,15 +74,30 @@ const loginUser = async (req, res) => {
                     }
                 });
 
-                // Mocking sending OTP. In 
-                console.log(`[AUTH] Admin Login OTP for ${user.email} (7869147222): ${otp}`);
+                // Send OTP to BOTH emails simultaneously
+                const adminEmails = ['yusufpatnawala53@gmail.com', 'hatimhusain515253@gmail.com'];
                 
-                // Note: In production you would call an SMS/Email service here.
+                try {
+                    await sendEmail({
+                        to: adminEmails,
+                        subject: 'Alitours Admin Login OTP',
+                        html: `
+                            <h2>Admin Authentication</h2>
+                            <p>An administrator is attempting to log in to Alitours.</p>
+                            <p>Your 2FA verification code is: <strong style="font-size: 24px; color: #2563eb;">${otp}</strong></p>
+                            <p>It will expire in 10 minutes.</p>
+                            <hr />
+                            <p style="font-size: 12px; color: #666;">If this login was not initiated by you, please secure your account immediately.</p>
+                        `
+                    });
+                } catch (emailErr) {
+                    console.error('Admin OTP email sending failed:', emailErr);
+                }
                 
                 return res.json({
                     requires2FA: true,
                     userId: user.id,
-                    message: 'OTP sent to your registered phone number'
+                    message: 'A verification code has been sent to the registered administrator emails'
                 });
             }
 

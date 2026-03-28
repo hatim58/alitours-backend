@@ -10,7 +10,7 @@ const sendEmail = async ({ to, subject, html, attachments = [] }) => {
     try {
         const data = await resend.emails.send({
             from: 'Alitours <onboarding@resend.dev>', // Update with your verified domain
-            to: [to],
+            to: Array.isArray(to) ? to : [to],
             subject,
             html,
             attachments, // Format: { filename: 'file.pdf', path: 'url or base64', content: buffer }

